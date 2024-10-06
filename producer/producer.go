@@ -18,5 +18,5 @@ func main() {
 }
 
 func createComment(c *fiber.Ctx) error {
-
+	cmt := new(Comment)
 }
