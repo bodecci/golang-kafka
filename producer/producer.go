@@ -20,6 +20,27 @@ func main() {
 	app.Listen(":3000")
 }
 
+func ConnectProducer(brokersUrl []string) (sarama.SyncProducer, error) {
+	config := sarama.NewConfig()
+	comfig.Producer.Return.Successes = true
+	config.Producer.RequiredAcks = sarama.WaitForAll
+	config.Producer.Retry.Max = 5
+
+	conn, err := sarama.NewSync
+
+}
+
+func PushCommentToQueue(topic string, message []byte) error {
+	brokersUrl := []string{"localhost:29092"}
+	producer, err := ConnectProducer(brokersUrl)
+	if err != nil {
+		return err
+	}
+
+	defer producer.Close()
+
+}
+
 func createComment(c *fiber.Ctx) error {
 	// initialize new Comment struct
 	cmt := new(Comment)
