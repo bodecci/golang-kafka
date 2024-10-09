@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -32,4 +33,22 @@ func createComment(c *fiber.Ctx) error {
 		})
 		return err
 	}
+	// convert body into bytes and send it to kafka
+	cmtIntBytes, err := json.Marshal(cmt)
+	PushCommentToQueue("comments", cmtIntBytes)
+
+	// Return Comment in JSON format
+	c.JSON(&fiber.Map{
+		"success": true,
+		"message": "Comment pushed successfuly",
+		"comment": cmt,
+	})
+	if err != nil {
+		c.Status(500).JSON(&fiber.Map{
+			"success": false,
+			"message": "Error creating product",
+		})
+		return err
+	}
+	return err
 }
