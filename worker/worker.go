@@ -6,12 +6,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 )
 
 func main() {
 	topic := "comments"
-	connectConsumer([]string{"localhost:29092"})
+	worker, err := connectConsumer([]string{"localhost:29092"})
 	if err != nil {
 		panic(err)
 	}
@@ -55,5 +55,14 @@ func main() {
 }
 
 func connectConsumer(brokersUrl []string) (sarama.Consumer, error) {
+	config := sarama.NewConfig()
+	config.Consumer.Return.Errors = true
 
+	// Create new consumer
+	conn, err := sarama.NewConsumer(brokersUrl, config)
+	if err != nil {
+		return nil, err
+	}
+
+	return conn, nil
 }
