@@ -18,7 +18,6 @@ func main() {
 	api := app.Group("/api/vi")
 
 	api.Post("/comments", createComment)
-
 	app.Listen(":3000")
 }
 
