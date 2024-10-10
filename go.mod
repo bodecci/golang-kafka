@@ -2,10 +2,12 @@ module go-kafka
 
 go 1.23.1
 
-require github.com/gofiber/fiber/v2 v2.52.5
+require (
+	github.com/IBM/sarama v1.43.3
+	github.com/gofiber/fiber/v2 v2.52.5
+)
 
 require (
-	github.com/Shopify/sarama v1.43.3 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/eapache/go-resiliency v1.7.0 // indirect
