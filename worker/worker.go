@@ -11,58 +11,60 @@ import (
 
 func main() {
 	topic := "comments"
-	worker, err := connectConsumer([]string{"localhost:29092"})
+	// Connect to Kafka consumer
+	consumer, err := connectConsumer([]string{"localhost:29092"}, topic)
 	if err != nil {
-		panic(err)
+		panic(err) // Panic is used here for fatal errors
 	}
-	// Calling ConsumePartition. It will open one connection per broker
-	// and share it for all partitions that live on it.
-	consumer, err := worker.ConsumePartition(topic, 0, sarama.OffsetOldest)
-	if err != nil {
-		panic(err)
-	}
+	defer consumer.Close() // Ensure consumer connection is closed on exit
 
-	fmt.Println("consumer started")
+	fmt.Println("Consumer started")
 	sigchan := make(chan os.Signal, 1)
+	// Set up signal handling to gracefully shutdown the consumer
 	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
 
 	msgCount := 0
 
+	// Channel to signal when processing is complete
 	doneCh := make(chan struct{})
 
+	// Goroutine for consuming messages
 	go func() {
 		for {
 			select {
 			case err := <-consumer.Errors():
-				fmt.Println(err)
+				fmt.Println("Error received from consumer:", err)
 			case msg := <-consumer.Messages():
 				msgCount++
-				fmt.Printf("Received message Count: %d: | Topic (%s) | Message (%s) \n", msgCount, string(msg.Topic), string(msg.Value))
+				fmt.Printf("Received message Count: %d: | Topic (%s) | Message (%s)\n", msgCount, string(msg.Topic), string(msg.Value))
 			case <-sigchan:
-				fmt.Println("Interrupt is detected")
-				doneCh <- struct{}{}
+				fmt.Println("Interrupt detected")
+				doneCh <- struct{}{} // Signal shutdown
 			}
 		}
 	}()
 
-	<-doneCh
+	<-doneCh // Wait for shutdown signal
 	fmt.Println("Processed", msgCount, "messages")
-
-	if err := worker.Close(); err != nil {
-		panic(err)
-	}
-
 }
 
-func connectConsumer(brokersUrl []string) (sarama.Consumer, error) {
+// connectConsumer creates and returns a Kafka consumer connected to specified brokers and subscribed to a topic
+func connectConsumer(brokersUrl []string, topic string) (sarama.PartitionConsumer, error) {
 	config := sarama.NewConfig()
 	config.Consumer.Return.Errors = true
 
-	// Create new consumer
-	conn, err := sarama.NewConsumer(brokersUrl, config)
+	// Create new consumer at the cluster level
+	client, err := sarama.NewConsumer(brokersUrl, config)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create consumer: %w", err)
 	}
 
-	return conn, nil
+	// Consume from the specified topic and partition
+	consumer, err := client.ConsumePartition(topic, 0, sarama.OffsetOldest)
+	if err != nil {
+		client.Close() // Ensure to close client if partition consumer fails to start
+		return nil, fmt.Errorf("failed to start consumer for partition: %w", err)
+	}
+
+	return consumer, nil
 }
