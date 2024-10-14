@@ -18,6 +18,8 @@
 
 5. Run `go run worker/worker.go` to start the consumer
 
+NOTE: make sure to run above cmds in diff shells.
+
 ### Test it out!
 
 Send a POST request to `localhost:3000`
